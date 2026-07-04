@@ -3,18 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <title>Mini Universo</title>
-
 <style>
-body{
-    margin:0;
-    overflow:hidden;
-    background:black;
-}
-canvas{
-    display:block;
-}
+    body{
+        margin:0;
+        overflow:hidden;
+        background:black;
+    }
+    canvas{
+        display:block;
+    }
 </style>
-
 </head>
 <body>
 
@@ -25,189 +23,107 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.167/build/three.mod
 const scene = new THREE.Scene();
 
 const camera = new THREE.PerspectiveCamera(
-75,
-window.innerWidth/window.innerHeight,
-0.1,
-2000
+    75,
+    window.innerWidth/window.innerHeight,
+    0.1,
+    2000
 );
-
 camera.position.z = 120;
 
-const renderer = new THREE.WebGLRenderer({
-antialias:true
-});
-
+const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(window.innerWidth,window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 //////////////////////////////////////////////////////
 // ESTRELLAS
 //////////////////////////////////////////////////////
-
 const starsGeometry = new THREE.BufferGeometry();
-
 const stars = [];
 
-for(let i=0;i<10000;i++){
-
-stars.push(
-
-(Math.random()-0.5)*1800,
-(Math.random()-0.5)*1800,
-(Math.random()-0.5)*1800
-
-);
-
+for(let i=0; i<10000; i++){
+    stars.push(
+        (Math.random()-0.5)*1800,
+        (Math.random()-0.5)*1800,
+        (Math.random()-0.5)*1800
+    );
 }
 
-starsGeometry.setAttribute(
-'position',
-new THREE.Float32BufferAttribute(stars,3)
-);
-
-const starsMaterial = new THREE.PointsMaterial({
-
-color:0xffffff,
-size:1
-
-});
-
-const starField = new THREE.Points(
-starsGeometry,
-starsMaterial
-);
-
+starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(stars,3));
+const starsMaterial = new THREE.PointsMaterial({ color:0xffffff, size:1 });
+const starField = new THREE.Points(starsGeometry, starsMaterial);
 scene.add(starField);
 
 //////////////////////////////////////////////////////
 // AGUJERO NEGRO
 //////////////////////////////////////////////////////
-
 const blackHole = new THREE.Mesh(
-
-new THREE.SphereGeometry(18,64,64),
-
-new THREE.MeshBasicMaterial({
-color:0x000000
-})
-
+    new THREE.SphereGeometry(18,64,64),
+    new THREE.MeshBasicMaterial({ color:0x000000 })
 );
-
 scene.add(blackHole);
 
 const ring = new THREE.Mesh(
-
-new THREE.TorusGeometry(25,3,64,200),
-
-new THREE.MeshBasicMaterial({
-
-color:0xffaa00
-
-})
-
+    new THREE.TorusGeometry(25,3,64,200),
+    new THREE.MeshBasicMaterial({ color:0xffaa00 })
 );
-
-ring.rotation.x=Math.PI/2;
+ring.rotation.x = Math.PI/2;
 scene.add(ring);
 
 //////////////////////////////////////////////////////
-// CORAZÓN
+// CORAZÓN (Corregido y Centrado)
 //////////////////////////////////////////////////////
-
 const heartShape = new THREE.Shape();
+// Dibujamos el corazón apuntando hacia arriba correctamente
+heartShape.moveTo(0, 0);
+heartShape.bezierCurveTo(0, -3, -5, -15, -15, -15);
+heartShape.bezierCurveTo(-35, -15, -35, 10, -35, 10);
+heartShape.bezierCurveTo(-35, 30, -15, 45, 0, 60);
+heartShape.bezierCurveTo(15, 45, 35, 30, 35, 10);
+heartShape.bezierCurveTo(35, 10, 35, -15, 15, -15);
+heartShape.bezierCurveTo(5, -15, 0, -3, 0, 0);
 
-heartShape.moveTo(0,0);
+const heartGeometry = new THREE.ExtrudeGeometry(heartShape, {
+    depth: 3,
+    bevelEnabled: false
+});
 
-heartShape.bezierCurveTo(
-0,0,
--5,-8,
--15,-8
-);
-
-heartShape.bezierCurveTo(
--35,-8,
--35,18,
--35,18
-);
-
-heartShape.bezierCurveTo(
--35,40,
--15,55,
-0,70
-);
-
-heartShape.bezierCurveTo(
-15,55,
-35,40,
-35,18
-);
-
-heartShape.bezierCurveTo(
-35,18,
-35,-8,
-15,-8
-);
-
-heartShape.bezierCurveTo(
-5,-8,
-0,0,
-0,0
-);
+// Esto centra el punto de pivote en medio del corazón para que rote bien
+heartGeometry.center();
 
 const heart = new THREE.Mesh(
-
-new THREE.ExtrudeGeometry(heartShape,{
-depth:3,
-bevelEnabled:false
-}),
-
-new THREE.MeshBasicMaterial({
-color:0xff0055
-})
-
+    heartGeometry,
+    new THREE.MeshBasicMaterial({ color:0xff0055 })
 );
 
-heart.scale.set(.5,.5,.5);
-
-heart.position.set(60,-20,0);
+// Lo rotamos 180 grados para que la punta quede hacia abajo
+heart.rotation.x = Math.PI; 
+heart.scale.set(.5, .5, .5);
+heart.position.set(60, 0, 0); // Ajustado al centro vertical (Y=0)
 
 scene.add(heart);
 
 //////////////////////////////////////////////////////
 // ANIMACIÓN
 //////////////////////////////////////////////////////
-
 function animate(){
+    requestAnimationFrame(animate);
 
-requestAnimationFrame(animate);
+    starField.rotation.y += 0.0003;
+    ring.rotation.z += 0.01;
+    
+    // Ahora rotará perfectamente sobre su propio eje central
+    heart.rotation.y += 0.01; 
 
-starField.rotation.y+=0.0003;
-
-ring.rotation.z+=0.01;
-
-heart.rotation.y+=0.01;
-
-renderer.render(scene,camera);
-
+    renderer.render(scene,camera);
 }
-
 animate();
 
 window.addEventListener("resize",()=>{
-
-camera.aspect=window.innerWidth/window.innerHeight;
-
-camera.updateProjectionMatrix();
-
-renderer.setSize(
-window.innerWidth,
-window.innerHeight
-);
-
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
 </script>
-
 </body>
 </html>
-
