@@ -1,2 +1,0 @@
-# TeAmo
-uwu
