@@ -17,7 +17,7 @@
         width: 100vw;
     }
 
-    /* Fondo de Estrellas */
+    /* Fondo de Estrellas Masivo */
     #space {
         position: absolute;
         top: 0;
@@ -28,7 +28,7 @@
         pointer-events: none;
     }
 
-    /* CONTENEDOR PRINCIPAL INDEPENDIENTE */
+    /* Contenedor Principal */
     .universe-container {
         position: relative;
         width: 1000px;
@@ -39,7 +39,6 @@
         z-index: 2;
     }
 
-    /* Forzamos a que el SVG sea libre y no tenga límites de caja */
     svg {
         overflow: visible !important;
         position: absolute;
@@ -47,7 +46,7 @@
         height: 100%;
     }
 
-    /* El Corazón con color sólido e iluminación interna */
+    /* Corazón Limpio (Sin efectos extraños) */
     .heart-glow {
         fill: #ff0055;
         stroke: #ff7799;
@@ -56,26 +55,13 @@
         transform-origin: center;
     }
 
-    /* El Anillo Cósmico */
+    /* Anillo Cósmico Limpio */
     .cosmic-ring {
         fill: none;
         stroke: #ffaa00;
         stroke-width: 24px;
         stroke-linecap: round;
         opacity: 0.95;
-    }
-
-    /* EL SECRETO: Una capa invisible gigante que genera el resplandor de fondo sin cortar nada */
-    .glow-overlay {
-        position: absolute;
-        width: 450px;
-        height: 450px;
-        background: radial-gradient(circle, rgba(255,0,85,0.8) 0%, rgba(255,170,0,0.4) 40%, rgba(0,0,0,0) 70%);
-        border-radius: 50%;
-        pointer-events: none;
-        z-index: 1;
-        mix-blend-mode: screen;
-        animation: pulseGlow 3s ease-in-out infinite alternate;
     }
 
     /* Texto "I love you Annette" */
@@ -87,29 +73,20 @@
         fill: #ffffff;
         text-anchor: middle;
         dominant-baseline: middle;
-        /* Sombra nativa de texto para evitar errores */
         filter: drop-shadow(0 2px 10px rgba(0,0,0,0.9));
     }
 
-    /* Animaciones */
+    /* Animación de latido */
     @keyframes pulse {
         0% { transform: scale(0.98); }
         100% { transform: scale(1.02); }
-    }
-
-    @keyframes pulseGlow {
-        0% { transform: scale(0.95); opacity: 0.8; }
-        100% { transform: scale(1.05); opacity: 1; }
     }
 </style>
 </head>
 <body>
 
-    <!-- Fondo de estrellas -->
+    <!-- Fondo de estrellas multiplicado -->
     <canvas id="space"></canvas>
-
-    <!-- Capa de resplandor externa (No se puede recortar porque es un div circular difuminado) -->
-    <div class="glow-overlay"></div>
 
     <div class="universe-container">
         <svg viewBox="0 0 1000 600">
@@ -135,11 +112,11 @@
     </div>
 
 <script>
-    // Sistema de estrellas de fondo
+    // Sistema de estrellas densas
     const canvas = document.getElementById('space');
     const ctx = canvas.getContext('2d');
     let stars = [];
-    const numStars = 180;
+    const numStars = 600; // ¡Multiplicamos la cantidad de estrellas por completo!
 
     function resizeCanvas() {
         canvas.width = window.innerWidth;
@@ -152,9 +129,9 @@
             stars.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
-                size: Math.random() * 1.8 + 0.2,
+                size: Math.random() * 2.2 + 0.3, // Tamaños más variados para dar profundidad
                 brightness: Math.random(),
-                speed: Math.random() * 0.02 + 0.005
+                speed: Math.random() * 0.015 + 0.003 // Parpadeos orgánicos
             });
         }
     }
