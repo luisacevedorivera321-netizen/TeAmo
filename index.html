@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Mini Universo</title>
+<title>Mini Universo con Mensaje de Amor</title>
 <style>
     body{
         margin:0;
@@ -16,9 +16,22 @@
 </head>
 <body>
 
+<!-- Import maps para cargar Three.js -->
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.167/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.167/examples/jsm/"
+    }
+}
+</script>
+
 <script type="module">
 
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.167/build/three.module.js";
+import * as THREE from "three";
+// Necesitamos un cargador de fuentes para el texto
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 
 const scene = new THREE.Scene();
 
@@ -32,6 +45,7 @@ camera.position.z = 120;
 
 const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.shadowMap.enabled = true; // Habilitar sombras para el efecto de brillo
 document.body.appendChild(renderer.domElement);
 
 //////////////////////////////////////////////////////
@@ -54,12 +68,13 @@ const starField = new THREE.Points(starsGeometry, starsMaterial);
 scene.add(starField);
 
 //////////////////////////////////////////////////////
-// AGUJERO NEGRO
+// AGUJERO NEGRO (CENTRO)
 //////////////////////////////////////////////////////
 const blackHole = new THREE.Mesh(
     new THREE.SphereGeometry(18,64,64),
     new THREE.MeshBasicMaterial({ color:0x000000 })
 );
+// Ya está en (0,0,0) por defecto
 scene.add(blackHole);
 
 const ring = new THREE.Mesh(
@@ -70,10 +85,9 @@ ring.rotation.x = Math.PI/2;
 scene.add(ring);
 
 //////////////////////////////////////////////////////
-// CORAZÓN (Corregido y Centrado)
+// CORAZÓN (Centrado en el Agujero Negro)
 //////////////////////////////////////////////////////
 const heartShape = new THREE.Shape();
-// Dibujamos el corazón apuntando hacia arriba correctamente
 heartShape.moveTo(0, 0);
 heartShape.bezierCurveTo(0, -3, -5, -15, -15, -15);
 heartShape.bezierCurveTo(-35, -15, -35, 10, -35, 10);
@@ -87,20 +101,73 @@ const heartGeometry = new THREE.ExtrudeGeometry(heartShape, {
     bevelEnabled: false
 });
 
-// Esto centra el punto de pivote en medio del corazón para que rote bien
+// Centramos el pivote
 heartGeometry.center();
 
-const heart = new THREE.Mesh(
-    heartGeometry,
-    new THREE.MeshBasicMaterial({ color:0xff0055 })
-);
+// Creamos un material que pueda recibir brillo
+const heartMaterial = new THREE.MeshStandardMaterial({
+    color: 0xff0055,
+    emissive: 0xaa0033, // Color emisivo suave
+    roughness: 0.5,
+    metalness: 0.1,
+});
 
-// Lo rotamos 180 grados para que la punta quede hacia abajo
-heart.rotation.x = Math.PI; 
-heart.scale.set(.5, .5, .5);
-heart.position.set(60, 0, 0); // Ajustado al centro vertical (Y=0)
+const heart = new THREE.Mesh(heartGeometry, heartMaterial);
+heart.receiveShadow = true; // El corazón recibirá sombras
+heart.rotation.x = Math.PI;
+heart.scale.set(.7, .7, .7); // Un poco más grande para el texto
 
+// *CORRECCIÓN DE POSICIÓN:*
+// Lo movemos al centro del agujero negro (0, 0, 0) y un poco hacia adelante (Z)
+heart.position.set(0, 0, 10);
 scene.add(heart);
+
+//////////////////////////////////////////////////////
+// TEXTO BRILLANTE "I love you Annette"
+//////////////////////////////////////////////////////
+// Cargador de fuentes
+const loader = new FontLoader();
+// Usamos una fuente por defecto de Three.js
+loader.load( 'https://cdn.jsdelivr.net/npm/three@0.167/examples/fonts/helvetiker_regular.typeface.json', function ( font ) {
+
+    const textGeometry = new TextGeometry( 'I love you Annette', {
+        font: font,
+        size: 8, // Ajustado para que quepa dentro del corazón
+        height: 1, // Grosor del texto
+        curveSegments: 12,
+        bevelEnabled: false
+    } );
+
+    textGeometry.center(); // Centramos el texto
+
+    // *MATERIAL BRILLANTE (Neon) para el texto:*
+    // Usamos emissiveMap y emissive para el efecto
+    const textMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff, // Color base blanco
+        emissive: 0xff0055, // Color del brillo rosa
+        emissiveIntensity: 5, // Intensidad del brillo
+        roughness: 0.1,
+        metalness: 0.1,
+    });
+
+    const textMesh = new THREE.Mesh( textGeometry, textMaterial );
+    textMesh.position.set(0, 0, 2); // Un poco más adelante del corazón (z=2 respecto al corazón)
+    textMesh.castShadow = true; // El texto proyectará sombras
+    heart.add(textMesh); // Añadimos el texto *dentro* de la malla del corazón para que giren juntos
+
+} );
+
+//////////////////////////////////////////////////////
+// ILUMINACIÓN para que el brillo se note
+//////////////////////////////////////////////////////
+// Una luz de punto para el brillo del texto
+const textPointLight = new THREE.PointLight(0xff0055, 10, 50);
+textPointLight.position.set(0, 0, 15);
+heart.add(textPointLight);
+
+// Una luz ambiental suave para el resto de la escena
+const ambientLight = new THREE.AmbientLight(0x222222);
+scene.add(ambientLight);
 
 //////////////////////////////////////////////////////
 // ANIMACIÓN
@@ -110,9 +177,9 @@ function animate(){
 
     starField.rotation.y += 0.0003;
     ring.rotation.z += 0.01;
-    
-    // Ahora rotará perfectamente sobre su propio eje central
-    heart.rotation.y += 0.01; 
+
+    // El corazón y el texto girarán juntos porque el texto es hijo de la malla 'heart'
+    heart.rotation.y += 0.01;
 
     renderer.render(scene,camera);
 }
